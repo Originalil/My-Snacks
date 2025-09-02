@@ -901,21 +901,32 @@ Latest<!DOCTYPE html>
         });
 
         // Authentication check - redirect to login if not authenticated
-        auth.onAuthStateChanged((user) => {
+        let authChecked = false;
+        
+        auth.onAuthStateChanged(async (user) => {
+            if (authChecked) return; // Prevent multiple redirects
+            authChecked = true;
+            
             if (!user) {
                 // User is not logged in, redirect to login page
-                window.location.href = 'MySnacks.html';
+                console.log('No user found, redirecting to login');
+                window.location.replace('MySnacks.html');
                 return;
             }
             
-            // User is logged in but check if email is verified
-            if (!user.emailVerified) {
+            // Reload user to get fresh email verification status
+            await user.reload();
+            const freshUser = auth.currentUser;
+            
+            if (!freshUser.emailVerified) {
                 // Email not verified, redirect to login page
-                window.location.href = 'MySnacks.html';
+                console.log('Email not verified, redirecting to login');
+                window.location.replace('MySnacks.html');
                 return;
             }
             
             // User is authenticated and verified, initialize the store
+            console.log('User authenticated and verified, loading store');
             initializeFirebase();
             setupFirebaseListeners();
             renderCart(); // Initial cart render (empty)
