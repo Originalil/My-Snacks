@@ -901,41 +901,40 @@ Latest<!DOCTYPE html>
         });
 
         // Authentication check - redirect to login if not authenticated
-        let authChecked = false;
+        let authInitialized = false;
         
-        auth.onAuthStateChanged(async (user) => {
-            if (authChecked) return; // Prevent multiple redirects
-            authChecked = true;
+        auth.onAuthStateChanged((user) => {
+            console.log('Auth state changed:', user ? 'User logged in' : 'No user', user?.emailVerified ? 'Email verified' : 'Email not verified');
             
             if (!user) {
                 // User is not logged in, redirect to login page
-                console.log('No user found, redirecting to login');
+                console.log('Redirecting to login - no user');
                 window.location.replace('MySnacks.html');
                 return;
             }
             
-            // Reload user to get fresh email verification status
-            await user.reload();
-            const freshUser = auth.currentUser;
-            
-            if (!freshUser.emailVerified) {
+            // User is logged in but check if email is verified
+            if (!user.emailVerified) {
                 // Email not verified, redirect to login page
-                console.log('Email not verified, redirecting to login');
+                console.log('Redirecting to login - email not verified');
                 window.location.replace('MySnacks.html');
                 return;
             }
             
-            // User is authenticated and verified, initialize the store
-            console.log('User authenticated and verified, loading store');
-            initializeFirebase();
-            setupFirebaseListeners();
-            renderCart(); // Initial cart render (empty)
+            // User is authenticated and verified, initialize the store only once
+            if (!authInitialized) {
+                console.log('Initializing store for authenticated user');
+                authInitialized = true;
+                initializeFirebase();
+                setupFirebaseListeners();
+                renderCart(); // Initial cart render (empty)
+            }
         });
 
         // Add logout functionality
         function logout() {
             auth.signOut().then(() => {
-                window.location.href = 'MySnacks.html';
+                window.location.replace('MySnacks.html');
             }).catch((error) => {
                 console.error('Sign out error', error);
                 showCustomAlert('Error signing out. Please try again.');
